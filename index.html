@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>آمار غذا و کمپ</title>
+<meta name="theme-color" content="#2f5fb3">
+<meta name="description" content="آمار روزانه غذا و کمپ">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="آمار کمپ">
+<style>
+@font-face{font-family:"B Titr";src:local("B Titr"),local("BTitr"),url("BTitr.ttf") format("truetype");font-display:swap}
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#f5f6f8;--card:#fff;--tx:#1d2330;--mu:#667085;--bd:#d6dae1;--pr:#2f5fb3;--on:#fff;--in:#fff4cc;--ok:#e3f1e0;--er:#b3261e}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#13161c;--card:#1d222b;--tx:#e8eaee;--mu:#9aa3b2;--bd:#343b48;--pr:#6c97e6;--on:#10131a;--in:#4a4219;--ok:#22402a;--er:#f2958f}}
+:root[data-theme="dark"]{--bg:#13161c;--card:#1d222b;--tx:#e8eaee;--mu:#9aa3b2;--bd:#343b48;--pr:#6c97e6;--on:#10131a;--in:#4a4219;--ok:#22402a;--er:#f2958f}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.5 Tahoma,"Vazirmatn",system-ui,sans-serif}
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--card);border-bottom:1px solid var(--bd);padding:8px 12px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--card);z-index:10}
+h1{font-size:16px;margin:0 0 6px}
+nav{display:flex;gap:6px;overflow-x:auto}
+nav button{flex:1;white-space:nowrap}
+button,input,select{font:inherit;color:var(--tx)}
+button{background:var(--card);border:1px solid var(--bd);border-radius:8px;padding:7px 12px;cursor:pointer}
+button.on,button.p{background:var(--pr);color:var(--on);border-color:var(--pr)}
+button.d{color:var(--er)}
+input,select{background:var(--card);border:1px solid var(--bd);border-radius:8px;padding:8px;width:100%}
+main{padding:12px;max-width:960px;margin:auto}
+section{display:none}section.on{display:block}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px;margin-bottom:12px}
+.g{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+label{display:block;font-size:13px;color:var(--mu)}
+.sc{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{border:1px solid var(--bd);padding:5px 8px;text-align:center;white-space:nowrap}
+th{background:var(--pr);color:var(--on)}
+td.l{text-align:right}
+tr.t td{font-weight:700;background:var(--card)}
+tr.h td{font-weight:700;background:var(--ok)}
+td input{background:var(--in);width:90px;text-align:center;padding:4px}
+.msg{margin-top:8px;font-weight:700}
+.msg.e{color:var(--er)}
+h2{font-size:15px;margin:0 0 8px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.blk h2,.pt{font-family:"B Titr",Tahoma,sans-serif;text-align:center}
+.pt{display:none;font-size:18px;margin:0 0 8px}
+.stat{text-align:center;margin-top:8px;font-weight:700}
+.blk .sub{text-align:center;color:var(--mu);margin-bottom:6px}
+body.pl table{font-size:10px}body.pl th,body.pl td{padding:2px 4px}
+@media print{.pt{display:block}@page{size:A4;margin:15mm}header,.noprint{display:none!important}body{background:#fff;color:#000}body::before{display:none}.blk:not(.pr){display:none}.blk.pr{border:0}.card{border:0}th{background:#ddd!important;color:#000!important}}
+</style>
+</head>
+<body>
+<header class="noprint">
+<h1>آمار غذا و کمپ <span id="dt" style="color:var(--mu);font-weight:400"></span></h1>
+<nav id="nav"></nav>
+</header>
+<main>
+<section id="reg"></section>
+<section id="list"></section>
+<section id="sum"></section>
+<section id="camp"></section>
+<section id="tools"></section>
+</main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+var K='camp-app-v1';
+var D={date:'',people:[],camps:['کارمندی1','کارمندی2'],civil:['داربست بند','نقشه بردار','مکانیکال','رحمان رحیمی','عادل موسوی','وحید علیزاده'],mgmt:'مدیریت',campL:{'کارمندی1':0,'کارمندی2':0,'کارگری1':0,'کارگری2':0,'کارگری3':0,'انبار':0},extra:[],m:{nazar:0,gm:0,gs:0,mach:0,hers:0}};
+var mem=null,tab='reg',q='',note='',noteErr=false,edi=-1;
+try{var r=localStorage.getItem(K);if(r)D=Object.assign(D,JSON.parse(r))}catch(e){}
+D.extra=D.extra||[];['کارگری2','انبار'].forEach(function(k){if(!(k in D.campL))D.campL[k]=0});
+function save(){try{localStorage.setItem(K,JSON.stringify(D))}catch(e){}}
+var $=function(i){return document.getElementById(i)};
+function n(s){return String(s==null?'':s).replace(/ي/g,'ی').replace(/ك/g,'ک').replace(/[۰-۹]/g,function(d){return '۰۱۲۳۴۵۶۷۸۹'.indexOf(d)}).replace(/[٠-٩]/g,function(d){return '٠١٢٣٤٥٦٧٨٩'.indexOf(d)}).trim()}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function num(v){v=parseFloat(n(v));return isNaN(v)?0:v}
+function uniq(a){var o=[];a.forEach(function(x){if(x&&o.indexOf(x)<0)o.push(x)});return o}
+function calc(){
+var P=D.people.filter(function(p){return p.pres==1}),mg=n(D.mgmt);
+var cp=P.filter(function(p){return n(p.camp)});
+var sim=P.filter(function(p){return n(p.unit)!==mg});
+var gr=[],gc={};
+sim.forEach(function(p){var g=n(p.grp)||'بدون تقسیم غذا';if(!(g in gc)){gc[g]=0;gr.push(g)}gc[g]++});
+var cc={};cp.forEach(function(p){var c=n(p.camp);cc[c]=(cc[c]||0)+1});
+var cl=D.camps.map(n).filter(Boolean),oth=cp.length;
+cl.forEach(function(c){oth-=cc[c]||0});
+var mgn=P.length-sim.length,simT=sim.length+num(D.m.gs),mgT=mgn+num(D.m.nazar)+num(D.m.gm);
+var civ=0;D.civil.map(n).filter(Boolean).forEach(function(g){civ+=gc[g]||0});
+var cm=0;for(var k in D.campL)cm+=num(D.campL[k]);
+var kit=simT-civ-cm,abd=kit-num(D.m.mach)-num(D.m.hers);
+return{P:P,cp:cp,gr:gr,gc:gc,cc:cc,cl:cl,oth:oth,mgn:mgn,simT:simT,mgT:mgT,civ:civ,cm:cm,kit:kit,abd:abd,lunch:simT+mgT}}
+function tb(head,rows){return '<div class="sc"><table><tr>'+head.map(function(h){return '<th>'+h+'</th>'}).join('')+'</tr>'+rows.join('')+'</table></div>'}
+function tr(c,cls,cls2){return '<tr'+(cls?' class="'+cls+'"':'')+'>'+c.map(function(x,i){return '<td'+(i==0?' class="l"':'')+'>'+x+'</td>'}).join('')+'</tr>'}
+function inp(path,v){return '<input type="number" inputmode="numeric" value="'+(v||0)+'" data-p="'+esc(path)+'">'}
+function show(){
+$('dt').textContent=D.date?'– '+D.date:'';
+$('nav').innerHTML=[['reg','ثبت'],['list','لیست'],['sum','خلاصه'],['camp','کمپ‌ها'],['tools','ابزار']].map(function(t){return '<button data-t="'+t[0]+'" class="'+(tab==t[0]?'on':'')+'">'+t[1]+'</button>'}).join('');
+['reg','list','sum','camp','tools'].forEach(function(t){$(t).className=tab==t?'on':''});
+if(tab=='reg')vReg();else if(tab=='list')vList();else if(tab=='sum')vSum();else if(tab=='camp')vCamp();else vTools()}
+function vReg(){
+var gs=uniq(D.people.map(function(p){return n(p.grp)}));
+$('reg').innerHTML='<div class="card"><h2>ثبت پرسنل</h2><div class="g">'+
+'<div><label>کد پرسنلی (اختیاری)</label><input id="f_code"></div>'+
+'<div><label>نام و نام خانوادگی *</label><input id="f_name"></div>'+
+'<div><label>واحد *</label><input id="f_unit"></div>'+
+'<div><label>شغل یا سمت *</label><input id="f_job"></div>'+
+'<div><label>حاضر *</label><select id="f_pres"><option value="1">حاضر (1)</option><option value="0">غایب (0)</option></select></div>'+
+'<div><label>تقسیم غذا</label><input id="f_grp" list="gl"><datalist id="gl">'+gs.map(function(g){return '<option value="'+esc(g)+'">'}).join('')+'</datalist></div>'+
+'<div><label>کمپ</label><input id="f_camp" list="cl"><datalist id="cl">'+D.camps.map(function(g){return '<option value="'+esc(g)+'">'}).join('')+'</datalist></div>'+
+'<div><label>شماره اتاق</label><input id="f_room" inputmode="numeric"></div>'+
+'<div><label>بومی-غیربومی</label><select id="f_nat"><option value=""></option><option>بومی</option><option>غیربومی</option></select></div>'+
+'</div><div class="row" style="margin-top:10px"><button class="p" id="sv">ذخیره</button><span class="msg'+(noteErr?' e':'')+'" id="nt">'+esc(note)+'</span></div></div>'}
+function addP(){
+var v=function(i){return $(i).value.trim()};
+if(!v('f_name')||!v('f_unit')||!v('f_job')){note='لطفاً سلول‌ها را تکمیل کنید.';noteErr=true;vReg();return}
+D.people.push({code:v('f_code'),name:v('f_name'),unit:v('f_unit'),job:v('f_job'),pres:+v('f_pres'),grp:v('f_grp'),camp:v('f_camp'),room:v('f_room'),nat:v('f_nat')});
+save();note='ثبت شد؛ شماره ردیف: '+D.people.length;noteErr=false;vReg()}
+function lst(){
+var rows=[];
+D.people.forEach(function(p,i){
+if(q&&n(p.code+' '+p.name+' '+p.unit+' '+p.camp+' '+p.grp+' '+p.room).indexOf(n(q))<0)return;
+var a=p.pres==1?1:0;
+rows.push(tr([i+1,esc(p.code),esc(p.name),esc(p.unit),esc(p.job),'<button data-tg="'+i+'">'+a+'</button>',1-a,a,a,a,esc(p.grp),esc(p.camp),esc(p.room),esc(p.nat),'<button class="noprint" data-ed="'+i+'">✎</button> <button class="d noprint" data-del="'+i+'">×</button>']))});
+var t=D.people.length,pr=D.people.filter(function(p){return p.pres==1}).length;
+return tb(['ردیف','کد','نام','واحد','شغل','حاضر','غایب','ناهار','شام','صبحانه','تقسیم غذا','کمپ','اتاق','بومی',''],rows)+'<div class="stat">کل نفرات: '+t+' | حاضر: '+pr+' | غایب: '+(t-pr)+'</div>'}
+function vList(){
+var e=D.people[edi],ed='';
+if(e)ed='<div class="card noprint"><h2>ویرایش: '+esc(e.name)+'</h2><div class="g">'+
+'<div><label>کد پرسنلی</label><input id="e_code" value="'+esc(e.code)+'"></div>'+
+'<div><label>تقسیم غذا</label><input id="e_grp" list="gl2" value="'+esc(e.grp)+'"><datalist id="gl2">'+uniq(D.people.map(function(p){return n(p.grp)})).map(function(g){return '<option value="'+esc(g)+'">'}).join('')+'</datalist></div>'+
+'<div><label>کمپ</label><input id="e_camp" list="cl2" value="'+esc(e.camp)+'"><datalist id="cl2">'+D.camps.map(function(g){return '<option value="'+esc(g)+'">'}).join('')+'</datalist></div>'+
+'<div><label>شماره اتاق</label><input id="e_room" inputmode="numeric" value="'+esc(e.room)+'"></div></div>'+
+'<div class="row" style="margin-top:10px"><button class="p" id="es">ذخیره</button><button id="ec">انصراف</button></div></div>';
+$('list').innerHTML=ed+'<div class="card"><div class="pt">لیست آمار روزانه'+(D.date?' – '+esc(D.date):'')+'</div><input id="q" class="noprint" placeholder="جستجو در کد، نام، واحد، کمپ…" value="'+esc(q)+'"><div class="noprint" style="height:10px"></div><div id="lt">'+lst()+'</div></div>'}
+function vSum(){
+var c=calc(),h='';
+h+='<div class="card"><h2>جمع کل</h2>'+tb(['وعده','تعداد'],[tr(['صبحانه (فقط دارای کمپ)',c.cp.length]),tr(['ناهار (ساده + مدیریتی)',c.lunch]),tr(['شام (فقط دارای کمپ)',c.cp.length]),tr(['حاضر',c.P.length]),tr(['غایب',D.people.length-c.P.length]),tr(['کل پرسنل',D.people.length])])+'</div>';
+h+='<div class="card"><h2>صبحانه و شام به تفکیک کمپ</h2>'+tb(['کمپ','صبحانه','شام'],c.cl.map(function(k){return tr([esc(k),c.cc[k]||0,c.cc[k]||0])}).concat([tr(['سایر',c.oth,c.oth]),tr(['جمع',c.cp.length,c.cp.length],'t')]))+'</div>';
+h+='<div class="card"><h2>ناهار ساده به تفکیک تقسیم غذا</h2>'+tb(['تقسیم غذا','تعداد'],c.gr.map(function(g){return tr([esc(g),c.gc[g]])}).concat([tr(['مهمان (دستی)',inp('m.gs',D.m.gs)]),tr(['جمع ناهار ساده',c.simT],'t')]))+'</div>';
+h+='<div class="card"><h2>ناهار مدیریتی</h2>'+tb(['شرح','تعداد'],[tr(['مدیریت',c.mgn]),tr(['نظارت (دستی)',inp('m.nazar',D.m.nazar)]),tr(['مهمان (دستی)',inp('m.gm',D.m.gm)]),tr(['جمع غذای مدیریتی',c.mgT],'t')])+'</div>';
+var cr=D.civil.map(n).filter(Boolean).map(function(g){return tr([esc(g),c.gc[g]||0])});
+var DEF=['کارمندی1','کارمندی2','کارگری1','کارگری2','کارگری3','انبار'];
+var kr=Object.keys(D.campL).map(function(k){return tr([esc(k)+(DEF.indexOf(k)<0?' <button class="d noprint" data-dc="'+esc(k)+'">×</button>':''),inp('campL.'+k,D.campL[k])])});
+h+='<div class="card"><h2>تفکیک تحویل ناهار ساده</h2>'+tb(['شرح','تعداد'],[tr(['ناهار ساده (جمع)',c.simT],'t'),tr(['سیویل (تحویل جداگانه)','' ],'t')].concat(cr,[tr(['جمع سیویل',c.civ],'t'),tr(['بالا در کمپ (دستی)',''],'t')],kr,[tr(['جمع بالا در کمپ',c.cm],'t'),tr(['جمع سیویل + کمپ',c.civ+c.cm],'t'),tr(['تحویلی از آشپزخانه',c.kit],'h'),tr(['ماشین‌آلات (دستی)',inp('m.mach',D.m.mach)]),tr(['حراست (دستی)',inp('m.hers',D.m.hers)]),tr(['تحویلی آبدارخانه',c.abd],'h')]))+'<div class="row noprint" style="margin-top:8px"><button id="addc">+ کمپ دستی</button></div></div>';
+$('sum').innerHTML=h}
+function vCamp(){
+var h='';
+D.camps.map(n).filter(Boolean).forEach(function(k,i){
+var L=D.people.filter(function(p){return p.pres==1&&n(p.camp)==k});D.extra.forEach(function(e,ix){if(n(e.camp)==k)L.push({name:e.name,room:e.room,x:ix+1})});
+L.sort(function(a,b){var x=parseFloat(n(a.room)),y=parseFloat(n(b.room));x=isNaN(x)?Infinity:x;y=isNaN(y)?Infinity:y;return x-y});
+h+='<div class="card blk" data-b="'+i+'"><h2>آمار شام و صبحانه '+esc(k)+'</h2><div class="sub">'+(D.date?'تاریخ: '+esc(D.date)+' | ':'')+'تعداد حاضرین: '+L.length+'</div>'+
+tb(['ردیف','نام و نام خانوادگی','شماره اتاق'],L.map(function(p,j){return tr([j+1,esc(p.name)+(p.x?' (دستی) <button class="d noprint" data-dx="'+(p.x-1)+'">×</button>':''),esc(p.room)])}))+
+'<div class="row noprint" style="margin-top:8px;justify-content:center"><button data-pdf="'+i+'">خروجی PDF</button></div></div>'});
+$('camp').innerHTML=formX()+(h||'<div class="card">کمپی تعریف نشده است. در تب ابزار نام کمپ‌ها را بنویسید.</div>')}
+function formX(){return '<div class="card noprint"><h2>افزودن دستی (مثلاً مهمان)</h2><div class="g"><div><label>نام</label><input id="x_name"></div><div><label>کمپ</label><select id="x_camp">'+D.camps.map(function(k){return '<option>'+esc(k)+'</option>'}).join('')+'</select></div><div><label>شماره اتاق</label><input id="x_room" inputmode="numeric"></div></div><div class="row" style="margin-top:10px"><button class="p" id="addx">افزودن به لیست کمپ</button><span class="msg e" id="xm"></span></div></div>'}
+function vTools(){
+$('tools').innerHTML='<div class="card"><h2>تنظیمات</h2><div class="g">'+
+'<div><label>تاریخ</label><input id="s_date" value="'+esc(D.date)+'"></div>'+
+'<div><label>واحد مدیریت</label><input id="s_mgmt" value="'+esc(D.mgmt)+'"></div>'+
+'<div><label>کمپ‌ها (با ویرگول جدا کنید)</label><input id="s_camps" value="'+esc(D.camps.join('، '))+'"></div>'+
+'<div><label>گروه‌های سیویل (با ویرگول)</label><input id="s_civil" value="'+esc(D.civil.join('، '))+'"></div></div></div>'+
+'<div class="card"><h2>ورود و خروج داده</h2><div class="row"><label style="display:inline">فایل اکسل (آمار روزانه):</label><input type="file" id="fx" accept=".xlsx,.xlsm,.xls" style="width:auto"></div>'+
+'<div class="row" style="margin-top:10px"><button class="p" id="ex">ذخیره‌ی اکسل</button><button id="cp">کپی برای اکسل</button><button id="pl">PDF لیست</button><button class="d" id="rs">پاک کردن همه‌ی داده‌ها</button></div><div class="msg" id="tm"></div><textarea id="ta" class="noprint" style="display:none;margin-top:8px;width:100%;height:120px"></textarea></div>'}
+function tmsg(t,e){var x=$('tm');if(x){x.textContent=t;x.className='msg'+(e?' e':'')}}
+function imp(f){
+if(!window.XLSX){tmsg('کتابخانه‌ی اکسل بارگذاری نشد؛ اینترنت لازم است.',1);return}
+var rd=new FileReader();
+rd.onload=function(){try{
+var wb=XLSX.read(rd.result,{type:'array'}),ws=wb.Sheets['آمار روزانه']||wb.Sheets[wb.SheetNames[1]]||wb.Sheets[wb.SheetNames[0]];
+var rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''}),out=[];
+for(var i=2;i<rows.length;i++){var r=rows[i];if(!String(r[2]).trim())continue;
+out.push({code:String(r[1]).trim(),name:String(r[2]).trim(),unit:String(r[3]).trim(),job:String(r[4]).trim(),pres:n(r[5])==='1'?1:0,grp:String(r[10]).trim(),camp:String(r[11]).trim(),room:String(r[12]).trim(),nat:String(r[13]).trim()})}
+if(!out.length){tmsg('هیچ نفری پیدا نشد.',1);return}
+if(!confirm(out.length+' نفر وارد شود؟ لیست فعلی جایگزین می‌شود.'))return;
+D.people=out;var d=String((rows[0]||[])[12]||'').trim();if(d)D.date=d;save();show();tmsg(out.length+' نفر وارد شد.')
+}catch(e){tmsg('خواندن فایل ناموفق بود.',1)}};
+rd.readAsArrayBuffer(f)}
+function aoa(){var a=[['','','','','','','','','','','','تاریخ:',D.date],['ردیف','کد پرسنلی','نام و نام خانوادگی','واحد','شغل یا سمت','حاضر','غایب','ناهار','شام','صبحانه','تقسیم غذا','کمپ','شماره اتاق','بومی-غیربومی']];
+D.people.forEach(function(p,i){var x=p.pres==1?1:0;a.push([i+1,p.code,p.name,p.unit,p.job,x,1-x,x,x,x,p.grp,p.camp,p.room,p.nat])});
+var tt=D.people.length,pp=D.people.filter(function(p){return p.pres==1}).length;a.push([]);a.push(['','','کل نفرات',tt]);a.push(['','','حاضر',pp]);a.push(['','','غایب',tt-pp]);return a}
+function exp(){
+tmsg('در حال آماده‌سازی فایل…');
+var done=false,tm=setTimeout(function(){if(!done)tmsg('ذخیره‌ی مستقیم فایل در این نمایش ممکن نیست. از «کپی برای اکسل» یا «PDF لیست» استفاده کنید.',1)},6000);
+function fin(m,e){done=true;clearTimeout(tm);tmsg(m,e)}
+try{
+var a=aoa(),data,name;
+if(window.XLSX){var wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(a),'آمار روزانه');data=XLSX.write(wb,{bookType:'xlsx',type:'array'});name='آمار روزانه.xlsx'}
+else{data='\ufeff'+a.map(function(r){return r.map(function(c){return '"'+String(c==null?'':c).replace(/"/g,'""')+'"'}).join(',')}).join('\r\n');name='آمار روزانه.csv'}
+if(!(window.claude&&claude.use)){try{var bl=new Blob([data],{type:name.slice(-4)=='xlsx'?'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':'text/csv;charset=utf-8'}),u=URL.createObjectURL(bl),a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(u)},4000);fin('فایل ذخیره شد.')}catch(er){fin('ذخیره انجام نشد. از «کپی برای اکسل» استفاده کنید.',1)}return}
+claude.use('downloads').then(function(d){
+if(!d){fin('ذخیره‌ی مستقیم فایل در این نمایش ممکن نیست. از «کپی برای اکسل» یا «PDF لیست» استفاده کنید.',1);return}
+return d.save({filename:name,data:data}).then(function(){fin('فایل ذخیره شد.')},function(er){fin('ذخیره انجام نشد'+(er&&er.code?' ('+er.code+')':'')+'. از «کپی برای اکسل» یا «PDF لیست» استفاده کنید.',1)})
+}).catch(function(){fin('ذخیره‌ی فایل ممکن نیست. از «کپی برای اکسل» یا «PDF لیست» استفاده کنید.',1)})
+}catch(e){fin('ذخیره‌ی فایل ممکن نیست. از «کپی برای اکسل» یا «PDF لیست» استفاده کنید.',1)}}
+function cpy(){
+var s=aoa().slice(1).map(function(r){return r.join('\t')}).join('\n'),ta=$('ta');
+function manual(){ta.style.display='block';ta.value=s;ta.focus();ta.select();tmsg('متن انتخاب شد؛ کپی کنید و در اکسل Paste بزنید.')}
+try{navigator.clipboard.writeText(s).then(function(){tmsg('کپی شد؛ در اکسل Paste بزنید.')},manual)}catch(e){manual()}}
+document.addEventListener('click',function(e){
+var t=e.target.closest('button');if(!t)return;
+if(t.dataset.t){tab=t.dataset.t;show();window.scrollTo(0,0)}
+else if(t.id=='sv')addP();
+else if(t.dataset.tg!=null){var p=D.people[+t.dataset.tg];p.pres=p.pres==1?0:1;save();$('lt').innerHTML=lst()}
+else if(t.dataset.del!=null){if(confirm('این نفر حذف شود؟')){D.people.splice(+t.dataset.del,1);edi=-1;save();vList()}}
+else if(t.dataset.ed!=null){edi=+t.dataset.ed;vList();window.scrollTo(0,0)}
+else if(t.id=='es'){var pe=D.people[edi];if(pe){pe.code=$('e_code').value.trim();pe.grp=$('e_grp').value.trim();pe.camp=$('e_camp').value.trim();pe.room=$('e_room').value.trim();save()}edi=-1;vList()}
+else if(t.id=='ec'){edi=-1;vList()}
+else if(t.id=='addc'){var k=(prompt('نام کمپ:')||'').trim();if(k&&!(k in D.campL)){D.campL[k]=0;save();vSum()}}
+else if(t.dataset.pdf!=null){var b=document.querySelector('[data-b="'+t.dataset.pdf+'"]');b.classList.add('pr');try{window.print()}catch(x){}setTimeout(function(){b.classList.remove('pr')},500)}
+else if(t.dataset.dc!=null){var dk=t.dataset.dc;if(confirm('کمپ «'+dk+'» حذف شود؟')){delete D.campL[dk];save();vSum()}}
+else if(t.id=='ex')exp();
+else if(t.id=='cp')cpy();
+else if(t.id=='pl'){tab='list';show();document.body.classList.add('pl');try{window.print()}catch(x){}setTimeout(function(){document.body.classList.remove('pl')},800)}
+else if(t.id=='addx'){var nm=$('x_name').value.trim(),cm=$('x_camp').value;if(!nm||!cm){$('xm').textContent='لطفاً سلول‌ها را تکمیل کنید.';return}D.extra.push({name:nm,camp:cm,room:$('x_room').value.trim()});save();vCamp()}
+else if(t.dataset.dx!=null){D.extra.splice(+t.dataset.dx,1);save();vCamp()}
+else if(t.id=='rs'){if(confirm('همه‌ی داده‌ها پاک شود؟')){D.people=[];save();show()}}});
+document.addEventListener('input',function(e){
+var t=e.target;
+if(t.dataset.p){var k=t.dataset.p.split('.'),o=D;for(var i=0;i<k.length-1;i++)o=o[k[i]];o[k[k.length-1]]=num(t.value);save();var c=t.closest('.card');var y=t.selectionStart;
+clearTimeout(window._s);window._s=setTimeout(function(){var a=document.activeElement,id=a&&a.dataset&&a.dataset.p;vSum();if(id){var z=document.querySelector('[data-p="'+id+'"]');if(z){z.focus();z.select&&z.select()}}},700)}
+else if(t.id=='q'){q=t.value.trim();$('lt').innerHTML=lst()}
+else if(t.id=='s_date'){D.date=t.value.trim();save();$('dt').textContent=D.date?'– '+D.date:''}
+else if(t.id=='s_mgmt'){D.mgmt=t.value.trim();save()}
+else if(t.id=='s_camps'){D.camps=t.value.split(/[,،]/).map(function(x){return x.trim()}).filter(Boolean);save()}
+else if(t.id=='s_civil'){D.civil=t.value.split(/[,،]/).map(function(x){return x.trim()}).filter(Boolean);save()}});
+document.addEventListener('change',function(e){if(e.target.id=='fx'&&e.target.files[0])imp(e.target.files[0])});
+show();
+if('serviceWorker' in navigator&&location.protocol.indexOf('http')==0){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){})})}
+</script>
+</body>
+</html>
