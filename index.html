@@ -83,7 +83,8 @@ function uniq(a){var o=[];a.forEach(function(x){if(x&&o.indexOf(x)<0)o.push(x)})
 function calc(){
 var P=D.people.filter(function(p){return p.pres==1}),mg=n(D.mgmt);
 var cp=P.filter(function(p){return n(p.camp)});
-var sim=P.filter(function(p){return n(p.unit)!==mg});
+function isM(p){var g=n(p.grp);return g?g===mg:n(p.unit)===mg}
+var sim=P.filter(function(p){return !isM(p)});
 var gr=[],gc={};
 sim.forEach(function(p){var g=n(p.grp)||'بدون تقسیم غذا';if(!(g in gc)){gc[g]=0;gr.push(g)}gc[g]++});
 var cc={};cp.forEach(function(p){var c=n(p.camp);cc[c]=(cc[c]||0)+1});
@@ -138,7 +139,7 @@ if(e)ed='<div class="card noprint"><h2>ویرایش: '+esc(e.name)+'</h2><div cl
 '<div class="row" style="margin-top:10px"><button class="p" id="es">ذخیره</button><button id="ec">انصراف</button></div></div>';
 $('list').innerHTML=ed+'<div class="card"><div class="pt">لیست آمار روزانه'+(D.date?' – '+esc(D.date):'')+'</div><input id="q" class="noprint" placeholder="جستجو در کد، نام، واحد، کمپ…" value="'+esc(q)+'"><div class="noprint" style="height:10px"></div><div id="lt">'+lst()+'</div></div>'}
 function vSum(){
-var c=calc(),h='';
+var c=calc(),h='<div class="row noprint" style="margin-bottom:10px"><button class="p" id="shs">📷 ذخیره‌ی عکس خلاصه</button></div>';
 h+='<div class="card"><h2>جمع کل</h2>'+tb(['وعده','تعداد'],[tr(['صبحانه (فقط دارای کمپ)',c.cp.length]),tr(['ناهار (ساده + مدیریتی)',c.lunch]),tr(['شام (فقط دارای کمپ)',c.cp.length]),tr(['حاضر',c.P.length]),tr(['غایب',D.people.length-c.P.length]),tr(['کل پرسنل',D.people.length])])+'</div>';
 h+='<div class="card"><h2>صبحانه و شام به تفکیک کمپ</h2>'+tb(['کمپ','صبحانه','شام'],c.cl.map(function(k){return tr([esc(k),c.cc[k]||0,c.cc[k]||0])}).concat([tr(['سایر',c.oth,c.oth]),tr(['جمع',c.cp.length,c.cp.length],'t')]))+'</div>';
 h+='<div class="card"><h2>ناهار ساده به تفکیک تقسیم غذا</h2>'+tb(['تقسیم غذا','تعداد'],c.gr.map(function(g){return tr([esc(g),c.gc[g]])}).concat([tr(['مهمان (دستی)',inp('m.gs',D.m.gs)]),tr(['جمع ناهار ساده',c.simT],'t')]))+'</div>';
@@ -155,17 +156,17 @@ var L=D.people.filter(function(p){return p.pres==1&&n(p.camp)==k});D.extra.forEa
 L.sort(function(a,b){var x=parseFloat(n(a.room)),y=parseFloat(n(b.room));x=isNaN(x)?Infinity:x;y=isNaN(y)?Infinity:y;return x-y});
 h+='<div class="card blk" data-b="'+i+'"><h2>آمار شام و صبحانه '+esc(k)+'</h2><div class="sub">'+(D.date?'تاریخ: '+esc(D.date)+' | ':'')+'تعداد حاضرین: '+L.length+'</div>'+
 tb(['ردیف','نام و نام خانوادگی','شماره اتاق'],L.map(function(p,j){return tr([j+1,esc(p.name)+(p.x?' (دستی) <button class="d noprint" data-dx="'+(p.x-1)+'">×</button>':''),esc(p.room)])}))+
-'<div class="row noprint" style="margin-top:8px;justify-content:center"><button data-pdf="'+i+'">خروجی PDF</button></div></div>'});
+'<div class="row noprint" style="margin-top:8px;justify-content:center"><button data-pdf="'+i+'">خروجی PDF</button><button data-img="'+i+'">خروجی عکس</button></div></div>'});
 $('camp').innerHTML=formX()+(h||'<div class="card">کمپی تعریف نشده است. در تب ابزار نام کمپ‌ها را بنویسید.</div>')}
 function formX(){return '<div class="card noprint"><h2>افزودن دستی (مثلاً مهمان)</h2><div class="g"><div><label>نام</label><input id="x_name"></div><div><label>کمپ</label><select id="x_camp">'+D.camps.map(function(k){return '<option>'+esc(k)+'</option>'}).join('')+'</select></div><div><label>شماره اتاق</label><input id="x_room" inputmode="numeric"></div></div><div class="row" style="margin-top:10px"><button class="p" id="addx">افزودن به لیست کمپ</button><span class="msg e" id="xm"></span></div></div>'}
 function vTools(){
 $('tools').innerHTML='<div class="card"><h2>تنظیمات</h2><div class="g">'+
 '<div><label>تاریخ</label><input id="s_date" value="'+esc(D.date)+'"></div>'+
-'<div><label>واحد مدیریت</label><input id="s_mgmt" value="'+esc(D.mgmt)+'"></div>'+
+'<div><label>نام تقسیم غذای مدیریتی</label><input id="s_mgmt" value="'+esc(D.mgmt)+'"></div>'+
 '<div><label>کمپ‌ها (با ویرگول جدا کنید)</label><input id="s_camps" value="'+esc(D.camps.join('، '))+'"></div>'+
 '<div><label>گروه‌های سیویل (با ویرگول)</label><input id="s_civil" value="'+esc(D.civil.join('، '))+'"></div></div></div>'+
 '<div class="card"><h2>ورود و خروج داده</h2><div class="row"><label style="display:inline">فایل اکسل (آمار روزانه):</label><input type="file" id="fx" accept=".xlsx,.xlsm,.xls" style="width:auto"></div>'+
-'<div class="row" style="margin-top:10px"><button class="p" id="ex">ذخیره‌ی اکسل</button><button id="cp">کپی برای اکسل</button><button id="pl">PDF لیست</button><button class="d" id="rs">پاک کردن همه‌ی داده‌ها</button></div><div class="msg" id="tm"></div><textarea id="ta" class="noprint" style="display:none;margin-top:8px;width:100%;height:120px"></textarea></div>'}
+'<div class="row" style="margin-top:10px"><button class="p" id="ex">ذخیره‌ی اکسل</button><button id="cp">کپی برای اکسل</button><button id="si">عکس خلاصه</button><button id="pl">PDF لیست</button><button class="d" id="rs">پاک کردن همه‌ی داده‌ها</button></div><div class="msg" id="tm"></div><textarea id="ta" class="noprint" style="display:none;margin-top:8px;width:100%;height:120px"></textarea></div>'}
 function tmsg(t,e){var x=$('tm');if(x){x.textContent=t;x.className='msg'+(e?' e':'')}}
 function imp(f){
 if(!window.XLSX){tmsg('کتابخانه‌ی اکسل بارگذاری نشد؛ اینترنت لازم است.',1);return}
@@ -183,6 +184,17 @@ rd.readAsArrayBuffer(f)}
 function aoa(){var a=[['','','','','','','','','','','','تاریخ:',D.date],['ردیف','کد پرسنلی','نام و نام خانوادگی','واحد','شغل یا سمت','حاضر','غایب','ناهار','شام','صبحانه','تقسیم غذا','کمپ','شماره اتاق','بومی-غیربومی']];
 D.people.forEach(function(p,i){var x=p.pres==1?1:0;a.push([i+1,p.code,p.name,p.unit,p.job,x,1-x,x,x,x,p.grp,p.camp,p.room,p.nat])});
 var tt=D.people.length,pp=D.people.filter(function(p){return p.pres==1}).length;a.push([]);a.push(['','','کل نفرات',tt]);a.push(['','','حاضر',pp]);a.push(['','','غایب',tt-pp]);return a}
+function toast(t){var x=document.getElementById('toast');if(!x){x=document.createElement('div');x.id='toast';x.className='noprint';x.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:8px 16px;border-radius:10px;z-index:99;font-size:14px';document.body.appendChild(x)}x.textContent=t;x.style.display='block';clearTimeout(x._t);x._t=setTimeout(function(){x.style.display='none'},3500)}
+function loadH2C(ok,bad){if(window.html2canvas)return ok();var sc=document.createElement('script');sc.src='https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';sc.onload=ok;sc.onerror=bad;document.head.appendChild(sc)}
+function shot(el,name){
+toast('در حال ساخت عکس…');
+loadH2C(function(){
+var bg=getComputedStyle(el).backgroundColor;if(!bg||bg=='rgba(0, 0, 0, 0)')bg=getComputedStyle(document.body).backgroundColor;
+html2canvas(el,{scale:2,backgroundColor:bg,useCORS:true,onclone:function(d){d.querySelectorAll('.noprint').forEach(function(x){x.style.display='none'});d.querySelectorAll('.sc').forEach(function(x){x.style.overflow='visible'})}}).then(function(cv){
+cv.toBlob(function(b){if(!b){toast('ساخت عکس ناموفق بود.');return}
+var u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download=name+'.png';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(u)},5000);toast('عکس ذخیره شد.')},'image/png')
+}).catch(function(){toast('ساخت عکس ناموفق بود.')})
+},function(){toast('کتابخانه‌ی عکس بارگذاری نشد؛ اینترنت لازم است.')})}
 function exp(){
 tmsg('در حال آماده‌سازی فایل…');
 var done=false,tm=setTimeout(function(){if(!done)tmsg('ذخیره‌ی مستقیم فایل در این نمایش ممکن نیست. از «کپی برای اکسل» یا «PDF لیست» استفاده کنید.',1)},6000);
@@ -213,6 +225,9 @@ else if(t.id=='ec'){edi=-1;vList()}
 else if(t.id=='addc'){var k=(prompt('نام کمپ:')||'').trim();if(k&&!(k in D.campL)){D.campL[k]=0;save();vSum()}}
 else if(t.dataset.pdf!=null){var b=document.querySelector('[data-b="'+t.dataset.pdf+'"]');b.classList.add('pr');try{window.print()}catch(x){}setTimeout(function(){b.classList.remove('pr')},500)}
 else if(t.dataset.dc!=null){var dk=t.dataset.dc;if(confirm('کمپ «'+dk+'» حذف شود؟')){delete D.campL[dk];save();vSum()}}
+else if(t.id=='shs'){shot($('sum'),'خلاصه-'+(D.date||'آمار').replace(/[\/\\:]/g,'-'))}
+else if(t.id=='si'){tab='sum';show();window.scrollTo(0,0);setTimeout(function(){shot($('sum'),'خلاصه-'+(D.date||'آمار').replace(/[\/\\:]/g,'-'))},400)}
+else if(t.dataset.img!=null){var bb=document.querySelector('[data-b="'+t.dataset.img+'"]');if(bb)shot(bb,'کمپ-'+t.dataset.img+'-'+(D.date||'').replace(/[\/\\:]/g,'-'))}
 else if(t.id=='ex')exp();
 else if(t.id=='cp')cpy();
 else if(t.id=='pl'){tab='list';show();document.body.classList.add('pl');try{window.print()}catch(x){}setTimeout(function(){document.body.classList.remove('pl')},800)}
